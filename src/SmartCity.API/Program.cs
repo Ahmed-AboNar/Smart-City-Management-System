@@ -25,9 +25,20 @@ using (var scope = app.Services.CreateScope())
     {
         var userRepo = services.GetRequiredService<SmartCity.Domain.Common.Interfaces.IAsyncRepository<SmartCity.Domain.Entities.User>>();
         var serviceRepo = services.GetRequiredService<SmartCity.Domain.Common.Interfaces.IAsyncRepository<SmartCity.Domain.Entities.ServiceDefinition>>();
+        var complaintRepo = services.GetRequiredService<SmartCity.Domain.Common.Interfaces.IAsyncRepository<SmartCity.Domain.Entities.Complaint>>();
+        var requestRepo = services.GetRequiredService<SmartCity.Domain.Common.Interfaces.IAsyncRepository<SmartCity.Domain.Entities.ServiceRequest>>();
+        var meterRepo = services.GetRequiredService<SmartCity.Domain.Common.Interfaces.IAsyncRepository<SmartCity.Domain.Entities.UtilityMeter>>();
+        var readingRepo = services.GetRequiredService<SmartCity.Domain.Common.Interfaces.IAsyncRepository<SmartCity.Domain.Entities.MeterReading>>();
         var logger = services.GetRequiredService<ILogger<SmartCity.Infrastructure.Persistence.SmartCityContextSeed>>();
 
-        await SmartCity.Infrastructure.Persistence.SmartCityContextSeed.SeedAsync(userRepo, serviceRepo, logger);
+        await SmartCity.Infrastructure.Persistence.SmartCityContextSeed.SeedAsync(
+            userRepo, 
+            serviceRepo, 
+            complaintRepo, 
+            requestRepo, 
+            meterRepo, 
+            readingRepo, 
+            logger);
     }
     catch (Exception ex)
     {
