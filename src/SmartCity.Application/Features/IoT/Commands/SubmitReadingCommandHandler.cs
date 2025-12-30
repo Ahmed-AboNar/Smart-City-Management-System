@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using SmartCity.Application.Common.Interfaces;
 using SmartCity.Application.Features.IoT.DTOs;
 using SmartCity.Domain.Common.Interfaces;
 using SmartCity.Domain.Entities;
@@ -10,12 +11,18 @@ public class SubmitReadingCommandHandler : IRequestHandler<SubmitReadingCommand,
 {
     private readonly IAsyncRepository<UtilityMeter> _meterRepository;
     private readonly IAsyncRepository<MeterReading> _readingRepository;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<SubmitReadingCommandHandler> _logger;
 
-    public SubmitReadingCommandHandler(IAsyncRepository<UtilityMeter> meterRepository, IAsyncRepository<MeterReading> readingRepository, ILogger<SubmitReadingCommandHandler> logger)
+    public SubmitReadingCommandHandler(
+        IAsyncRepository<UtilityMeter> meterRepository, 
+        IAsyncRepository<MeterReading> readingRepository, 
+        INotificationService notificationService,
+        ILogger<SubmitReadingCommandHandler> logger)
     {
         _meterRepository = meterRepository;
         _readingRepository = readingRepository;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -34,15 +41,17 @@ public class SubmitReadingCommandHandler : IRequestHandler<SubmitReadingCommand,
         var reading = new MeterReading(meter.Id, request.Value);
         await _readingRepository.AddAsync(reading);
 
-        // 3. Check Threshold (Simple Logic: If value > threshold)
-        // In reality, this might be usage-based (Value - PreviousValue > Threshold)
-        // For simplicity: Alert if absolute value exceeds threshold (e.g. pressure, or instant KW) 
-        // OR assuming Value is consumption since last reading.
-        
+        // 3. Check Threshold
         if (request.Value > meter.AlertThreshold)
         {
-            _logger.LogError("ALERT: Meter {SerialNumber} exceeded threshold! Value: {Value}, Threshold: {Threshold}", meter.SerialNumber, request.Value, meter.AlertThreshold);
-            // In real system: Publish Event -> Notification Service -> Send Email/SignalR
+            var message = $"ALERT: Meter {meter.SerialNumber} ({meter.Type}) exceeded threshold! Value: {request.Value}, Threshold: {meter.AlertThreshold}";
+            _logger.LogError(message);
+            
+            // Send real-time notification to the citizen owning the meter
+            await _notificationService.SendNotificationAsync(meter.CitizenId.ToString(), message);
+            
+            // Also broadcast to Admin/Employees group? For now just broadcast to everyone for visibility in demo
+            await _notificationService.BroadcastNotificationAsync($"[SYSTEM ALERT] {message}");
         }
 
         return true;
