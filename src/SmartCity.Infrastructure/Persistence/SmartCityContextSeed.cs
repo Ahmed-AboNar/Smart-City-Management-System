@@ -25,6 +25,18 @@ public class SmartCityContextSeed
             logger.LogInformation("Seeded Admin User.");
         }
 
+        // Seed Requested User
+        var userEmail = "ahmdasanhabwanar@gmail.com";
+        var existingUser = (await userRepository.ListAsync(u => u.Email.ToLower() == userEmail)).FirstOrDefault();
+
+        if (existingUser == null)
+        {
+            var testUser = new User("Ahmed Hasan Habwanar", userEmail, BCrypt.Net.BCrypt.HashPassword("Ahmed"), "1234567890", "0123456789");
+            testUser.AssignRole("Citizen");
+            await userRepository.AddAsync(testUser);
+            logger.LogInformation("Seeded Test User: {Email}", userEmail);
+        }
+
         // Seed Services
         var services = await serviceRepository.ListAllAsync();
         if (!services.Any())

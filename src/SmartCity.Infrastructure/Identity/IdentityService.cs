@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using SmartCity.Application.Common.Exceptions;
 using SmartCity.Application.Common.Interfaces;
 using SmartCity.Application.Features.Auth.DTOs;
 using SmartCity.Domain.Common.Interfaces;
@@ -37,13 +38,13 @@ public class IdentityService : IIdentityService
         if (user == null)
         {
             _logger.LogWarning("Login failed: User not found with email {Email}", normalizedEmail);
-            throw new Exception("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
         {
             _logger.LogWarning("Login failed: Password mismatch for user {Email}", normalizedEmail);
-            throw new Exception("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         return GenerateAuthResponse(user);
